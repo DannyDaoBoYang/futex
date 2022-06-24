@@ -1,16 +1,16 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 #ifndef _FUTEX_H
 #define _FUTEX_H
-/*
-#include <linux/futex.h>
-#include <linux/sched/wake_q.h>
-*/
+
+#include "./include/linux/futex.h"
+#include "./include/sched/wake_q.h"
+
 #ifdef CONFIG_PREEMPT_RT
-#include <linux/rcuwait.h>
+//#include <linux/rcuwait.h>
 #endif
 
 //#include <asm/futex.h>
-
+#include "./include/asm/futex.h"
 /*
  * Futex flags used to encode options to functions and preserve them across
  * restarts.

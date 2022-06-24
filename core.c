@@ -31,14 +31,12 @@
  *  "The futexes are also cursed."
  *  "But they come in a choice of three flavours!"
  */
- /*
-#include <linux/compat.h>
-#include <linux/jhash.h>
-#include <linux/pagemap.h>
-#include <linux/memblock.h>
-#include <linux/fault-inject.h>
-#include <linux/slab.h>
-*/
+ 
+#include "./include/jhash.h"
+//#include <linux/pagemap.h>
+//#include <linux/memblock.h>
+//#include <linux/fault-inject.h>
+//#include <linux/slab.h>
 #include "futex.h"
 //#include "../locking/rtmutex_common.h"
 
@@ -825,185 +823,7 @@ static void exit_robust_list(struct task_struct *curr)
 	}
 }
 
-#ifdef CONFIG_COMPAT
-static void __user *futex_uaddr(struct robust_list __user *entry,
-				compat_long_t futex_offset)
-{
-	compat_uptr_t base = ptr_to_compat(entry);
-	void __user *uaddr = compat_ptr(base + futex_offset);
-
-	return uaddr;
-}
-
-/*
- * Fetch a robust-list pointer. Bit 0 signals PI futexes:
- */
-static inline int
-compat_fetch_robust_entry(compat_uptr_t *uentry, struct robust_list __user **entry,
-		   compat_uptr_t __user *head, unsigned int *pi)
-{
-	if (get_user(*uentry, head))
-		return -EFAULT;
-
-	*entry = compat_ptr((*uentry) & ~1);
-	*pi = (unsigned int)(*uentry) & 1;
-
-	return 0;
-}
-
-/*
- * Walk curr->robust_list (very carefully, it's a userspace list!)
- * and mark any locks found there dead, and notify any waiters.
- *
- * We silently return on any sign of list-walking problem.
- */
-static void compat_exit_robust_list(struct task_struct *curr)
-{
-	struct compat_robust_list_head __user *head = curr->compat_robust_list;
-	struct robust_list __user *entry, *next_entry, *pending;
-	unsigned int limit = ROBUST_LIST_LIMIT, pi, pip;
-	unsigned int next_pi;
-	compat_uptr_t uentry, next_uentry, upending;
-	compat_long_t futex_offset;
-	int rc;
-
-	/*
-	 * Fetch the list head (which was registered earlier, via
-	 * sys_set_robust_list()):
-	 */
-	if (compat_fetch_robust_entry(&uentry, &entry, &head->list.next, &pi))
-		return;
-	/*
-	 * Fetch the relative futex offset:
-	 */
-	if (get_user(futex_offset, &head->futex_offset))
-		return;
-	/*
-	 * Fetch any possibly pending lock-add first, and handle it
-	 * if it exists:
-	 */
-	if (compat_fetch_robust_entry(&upending, &pending,
-			       &head->list_op_pending, &pip))
-		return;
-
-	next_entry = NULL;	/* avoid warning with gcc */
-	while (entry != (struct robust_list __user *) &head->list) {
-		/*
-		 * Fetch the next entry in the list before calling
-		 * handle_futex_death:
-		 */
-		rc = compat_fetch_robust_entry(&next_uentry, &next_entry,
-			(compat_uptr_t __user *)&entry->next, &next_pi);
-		/*
-		 * A pending lock might already be on the list, so
-		 * dont process it twice:
-		 */
-		if (entry != pending) {
-			void __user *uaddr = futex_uaddr(entry, futex_offset);
-
-			if (handle_futex_death(uaddr, curr, pi,
-					       HANDLE_DEATH_LIST))
-				return;
-		}
-		if (rc)
-			return;
-		uentry = next_uentry;
-		entry = next_entry;
-		pi = next_pi;
-		/*
-		 * Avoid excessively long or circular lists:
-		 */
-		if (!--limit)
-			break;
-
-		cond_resched();
-	}
-	if (pending) {
-		void __user *uaddr = futex_uaddr(pending, futex_offset);
-
-		handle_futex_death(uaddr, curr, pip, HANDLE_DEATH_PENDING);
-	}
-}
-#endif
-
-#ifdef CONFIG_FUTEX_PI
-
-/*
- * This task is holding PI mutexes at exit time => bad.
- * Kernel cleans up PI-state, but userspace is likely hosed.
- * (Robust-futex cleanup is separate and might save the day for userspace.)
- */
-static void exit_pi_state_list(struct task_struct *curr)
-{
-	struct list_head *next, *head = &curr->pi_state_list;
-	struct futex_pi_state *pi_state;
-	struct futex_hash_bucket *hb;
-	union futex_key key = FUTEX_KEY_INIT;
-
-	/*
-	 * We are a ZOMBIE and nobody can enqueue itself on
-	 * pi_state_list anymore, but we have to be careful
-	 * versus waiters unqueueing themselves:
-	 */
-	raw_spin_lock_irq(&curr->pi_lock);
-	while (!list_empty(head)) {
-		next = head->next;
-		pi_state = list_entry(next, struct futex_pi_state, list);
-		key = pi_state->key;
-		hb = futex_hash(&key);
-
-		/*
-		 * We can race against put_pi_state() removing itself from the
-		 * list (a waiter going away). put_pi_state() will first
-		 * decrement the reference count and then modify the list, so
-		 * its possible to see the list entry but fail this reference
-		 * acquire.
-		 *
-		 * In that case; drop the locks to let put_pi_state() make
-		 * progress and retry the loop.
-		 */
-		if (!refcount_inc_not_zero(&pi_state->refcount)) {
-			raw_spin_unlock_irq(&curr->pi_lock);
-			cpu_relax();
-			raw_spin_lock_irq(&curr->pi_lock);
-			continue;
-		}
-		raw_spin_unlock_irq(&curr->pi_lock);
-
-		spin_lock(&hb->lock);
-		raw_spin_lock_irq(&pi_state->pi_mutex.wait_lock);
-		raw_spin_lock(&curr->pi_lock);
-		/*
-		 * We dropped the pi-lock, so re-check whether this
-		 * task still owns the PI-state:
-		 */
-		if (head->next != next) {
-			/* retain curr->pi_lock for the loop invariant */
-			raw_spin_unlock(&pi_state->pi_mutex.wait_lock);
-			spin_unlock(&hb->lock);
-			put_pi_state(pi_state);
-			continue;
-		}
-
-		WARN_ON(pi_state->owner != curr);
-		WARN_ON(list_empty(&pi_state->list));
-		list_del_init(&pi_state->list);
-		pi_state->owner = NULL;
-
-		raw_spin_unlock(&curr->pi_lock);
-		raw_spin_unlock_irq(&pi_state->pi_mutex.wait_lock);
-		spin_unlock(&hb->lock);
-
-		rt_mutex_futex_unlock(&pi_state->pi_mutex);
-		put_pi_state(pi_state);
-
-		raw_spin_lock_irq(&curr->pi_lock);
-	}
-	raw_spin_unlock_irq(&curr->pi_lock);
-}
-#else
 static inline void exit_pi_state_list(struct task_struct *curr) { }
-#endif
 
 static void futex_cleanup(struct task_struct *tsk)
 {
@@ -1011,13 +831,6 @@ static void futex_cleanup(struct task_struct *tsk)
 		exit_robust_list(tsk);
 		tsk->robust_list = NULL;
 	}
-
-#ifdef CONFIG_COMPAT
-	if (unlikely(tsk->compat_robust_list)) {
-		compat_exit_robust_list(tsk);
-		tsk->compat_robust_list = NULL;
-	}
-#endif
 
 	if (unlikely(!list_empty(&tsk->pi_state_list)))
 		exit_pi_state_list(tsk);
