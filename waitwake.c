@@ -134,7 +134,7 @@ void futex_wake_mark(struct wake_q_head *wake_q, struct futex_q *q)
 	 * Queue the task for later wakeup for after we've released
 	 * the hb->lock.
 	 */
-	//wake_q_add_safe(wake_q, p);
+	wake_q_add_safe(wake_q, p);
 }
 
 /*
@@ -146,7 +146,7 @@ int futex_wake(u32 __user *uaddr, unsigned int flags, int nr_wake, u32 bitset)
 	struct futex_q *this, *next;
 	union futex_key key = FUTEX_KEY_INIT;
 	int ret;
-	//DEFINE_WAKE_Q(wake_q);
+	DEFINE_WAKE_Q(wake_q);
 
 	if (!bitset)
 		return -EINVAL;
@@ -181,7 +181,7 @@ int futex_wake(u32 __user *uaddr, unsigned int flags, int nr_wake, u32 bitset)
 	}
 
 	spin_unlock(&hb->lock);
-	//wake_up_q(&wake_q);
+	wake_up_q(&wake_q);
 	return ret;
 }
 

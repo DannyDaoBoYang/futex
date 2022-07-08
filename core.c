@@ -31,8 +31,8 @@
  *  "The futexes are also cursed."
  *  "But they come in a choice of three flavours!"
  */
-#include "./include/linux/compat.h"
-#include "./include/linux/jhash.h"
+#include "./include/linux/compat.h" //still have a lot of dependencies ./include/linux/sched.h Probabely could be removed
+#include "./include/linux/jhash.h" 
 //#include <linux/pagemap.h> commented code out 320 322 388
 //#include <linux/memblock.h> // commented code out 177 186 261 267 294 295 321 323 341 371 378 381 393 414-417 490 1126 1128
 //#include <linux/fault-inject.h> nothing
