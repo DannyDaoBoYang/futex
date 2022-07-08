@@ -13,7 +13,20 @@
  */
 typedef unsigned int   u32;
 typedef unsigned int __u32;
-static inline __u32 rol32(__u32 word, unsigned int shift)
+
+/* An arbitrary initial parameter */
+#define JHASH_INITVAL		0xdeadbeef
+
+/* jhash2 - hash an array of u32's
+ * @k: the key which must be an array of u32's
+ * @length: the number of u32's in the key
+ * @initval: the previous hash, or an arbitray value
+ *
+ * Returns the hash value of the key.
+ */
+static inline u32 jhash2(const u32 *k, u32 length, u32 initval)
+{
+	inline __u32 rol32(__u32 word, unsigned int shift)
 {
 	return (word << (shift & 31)) | (word >> ((-shift) & 31));
 }
@@ -37,18 +50,6 @@ static inline __u32 rol32(__u32 word, unsigned int shift)
 	b ^= a; b -= rol32(a, 14);		\
 	c ^= b; c -= rol32(b, 24);		\
 }
-/* An arbitrary initial parameter */
-#define JHASH_INITVAL		0xdeadbeef
-
-/* jhash2 - hash an array of u32's
- * @k: the key which must be an array of u32's
- * @length: the number of u32's in the key
- * @initval: the previous hash, or an arbitray value
- *
- * Returns the hash value of the key.
- */
-static inline u32 jhash2(const u32 *k, u32 length, u32 initval)
-{
 	u32 a, b, c;
 
 	/* Set up the internal state */

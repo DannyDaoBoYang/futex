@@ -2,12 +2,8 @@
 #ifndef _UAPI_LINUX_FUTEX_H
 #define _UAPI_LINUX_FUTEX_H
 
-#define __user
-typedef unsigned int   u32;
-typedef unsigned int __u32;
-typedef unsigned long u64;
-typedef unsigned long __u64;
-
+#define __user BTF_TYPE_TAG(user)
+#include "../linux/types.h"
 
 /* Second argument to futex syscall */
 

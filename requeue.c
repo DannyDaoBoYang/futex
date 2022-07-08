@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#include <linux/sched/signal.h>
+//#include <linux/sched/signal.h> 717
 
 #include "futex.h"
-#include "../locking/rtmutex_common.h"
+//#include "../locking/rtmutex_common.h" 627 767 790 851 855 858 797
 
 /*
  * On PREEMPT_RT, the hash bucket lock is a 'sleeping' spinlock with an
@@ -369,7 +369,7 @@ int futex_requeue(u32 __user *uaddr1, unsigned int flags, u32 __user *uaddr2,
 	struct futex_pi_state *pi_state = NULL;
 	struct futex_hash_bucket *hb1, *hb2;
 	struct futex_q *this, *next;
-	DEFINE_WAKE_Q(wake_q);
+	//DEFINE_WAKE_Q(wake_q);
 
 	if (nr_wake < 0 || nr_requeue < 0)
 		return -EINVAL;
@@ -455,7 +455,7 @@ retry_private:
 			double_unlock_hb(hb1, hb2);
 			futex_hb_waiters_dec(hb2);
 
-			ret = get_user(curval, uaddr1);
+			//ret = get_user(curval, uaddr1);
 			if (ret)
 				return ret;
 
@@ -590,8 +590,8 @@ retry_private:
 
 		/* Plain futexes just wake or requeue and are done */
 		if (!requeue_pi) {
-			if (++task_count <= nr_wake)
-				futex_wake_mark(&wake_q, this);
+			if (++task_count <= nr_wake);
+				//futex_wake_mark(&wake_q, this);
 			else
 				requeue_futex(this, hb1, hb2, &key2);
 			continue;
@@ -624,9 +624,9 @@ retry_private:
 			continue;
 		}
 
-		ret = rt_mutex_start_proxy_lock(&pi_state->pi_mutex,
-						this->rt_waiter,
-						this->task);
+		//ret = rt_mutex_start_proxy_lock(&pi_state->pi_mutex,
+						//this->rt_waiter,
+						//this->task);
 
 		if (ret == 1) {
 			/*
@@ -671,7 +671,7 @@ retry_private:
 
 out_unlock:
 	double_unlock_hb(hb1, hb2);
-	wake_up_q(&wake_q);
+	//wake_up_q(&wake_q);
 	futex_hb_waiters_dec(hb2);
 	return ret ? ret : task_count;
 }
@@ -714,8 +714,8 @@ int handle_early_requeue_pi_wakeup(struct futex_hash_bucket *hb,
 	ret = -EWOULDBLOCK;
 	if (timeout && !timeout->task)
 		ret = -ETIMEDOUT;
-	else if (signal_pending(current))
-		ret = -ERESTARTNOINTR;
+	//else if (signal_pending(current))
+	//	ret = -ERESTARTNOINTR;
 	return ret;
 }
 
@@ -764,7 +764,7 @@ int futex_wait_requeue_pi(u32 __user *uaddr, unsigned int flags,
 			  u32 __user *uaddr2)
 {
 	struct hrtimer_sleeper timeout, *to;
-	struct rt_mutex_waiter rt_waiter;
+	//struct rt_mutex_waiter rt_waiter;
 	struct futex_hash_bucket *hb;
 	union futex_key key2 = FUTEX_KEY_INIT;
 	struct futex_q q = futex_q_init;
@@ -787,14 +787,14 @@ int futex_wait_requeue_pi(u32 __user *uaddr, unsigned int flags,
 	 * The waiter is allocated on our stack, manipulated by the requeue
 	 * code while we sleep on uaddr.
 	 */
-	rt_mutex_init_waiter(&rt_waiter);
+	//rt_mutex_init_waiter(&rt_waiter);
 
 	ret = get_futex_key(uaddr2, flags & FLAGS_SHARED, &key2, FUTEX_WRITE);
 	if (unlikely(ret != 0))
 		goto out;
 
 	q.bitset = bitset;
-	q.rt_waiter = &rt_waiter;
+	//q.rt_waiter = &rt_waiter;
 	q.requeue_pi_key = &key2;
 
 	/*
@@ -848,14 +848,14 @@ int futex_wait_requeue_pi(u32 __user *uaddr, unsigned int flags,
 	case Q_REQUEUE_PI_DONE:
 		/* Requeue completed. Current is 'pi_blocked_on' the rtmutex */
 		pi_mutex = &q.pi_state->pi_mutex;
-		ret = rt_mutex_wait_proxy_lock(pi_mutex, to, &rt_waiter);
+		//ret = rt_mutex_wait_proxy_lock(pi_mutex, to, &rt_waiter);
 
 		/* Current is not longer pi_blocked_on */
 		spin_lock(q.lock_ptr);
-		if (ret && !rt_mutex_cleanup_proxy_lock(pi_mutex, &rt_waiter))
+		//if (ret && !rt_mutex_cleanup_proxy_lock(pi_mutex, &rt_waiter))
 			ret = 0;
 
-		debug_rt_mutex_free_waiter(&rt_waiter);
+		//debug_rt_mutex_free_waiter(&rt_waiter);
 		/*
 		 * Fixup the pi_state owner and possibly acquire the lock if we
 		 * haven't already.

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#include <linux/sched/task.h>
-#include <linux/sched/signal.h>
-#include <linux/freezer.h>
+//#include <linux/sched/task.h> 122
+//#include <linux/sched/signal.h> 552 670
+//#include <linux/freezer.h> 355 507
 
 #include "futex.h"
 
@@ -119,7 +119,7 @@ void futex_wake_mark(struct wake_q_head *wake_q, struct futex_q *q)
 	if (WARN(q->pi_state || q->rt_waiter, "refusing to wake PI futex\n"))
 		return;
 
-	get_task_struct(p);
+	//get_task_struct(p);
 	__futex_unqueue(q);
 	/*
 	 * The waiting task can free the futex_q as soon as q->lock_ptr = NULL
@@ -134,7 +134,7 @@ void futex_wake_mark(struct wake_q_head *wake_q, struct futex_q *q)
 	 * Queue the task for later wakeup for after we've released
 	 * the hb->lock.
 	 */
-	wake_q_add_safe(wake_q, p);
+	//wake_q_add_safe(wake_q, p);
 }
 
 /*
@@ -146,7 +146,7 @@ int futex_wake(u32 __user *uaddr, unsigned int flags, int nr_wake, u32 bitset)
 	struct futex_q *this, *next;
 	union futex_key key = FUTEX_KEY_INIT;
 	int ret;
-	DEFINE_WAKE_Q(wake_q);
+	//DEFINE_WAKE_Q(wake_q);
 
 	if (!bitset)
 		return -EINVAL;
@@ -181,7 +181,7 @@ int futex_wake(u32 __user *uaddr, unsigned int flags, int nr_wake, u32 bitset)
 	}
 
 	spin_unlock(&hb->lock);
-	wake_up_q(&wake_q);
+	//wake_up_q(&wake_q);
 	return ret;
 }
 
@@ -207,9 +207,9 @@ static int futex_atomic_op_inuser(unsigned int encoded_op, u32 __user *uaddr)
 		oparg = 1 << oparg;
 	}
 
-	pagefault_disable();
+	//pagefault_disable();
 	ret = arch_futex_atomic_op_inuser(op, oparg, &oldval, uaddr);
-	pagefault_enable();
+	//pagefault_enable();
 	if (ret)
 		return ret;
 
@@ -351,8 +351,8 @@ void futex_wait_queue(struct futex_hash_bucket *hb, struct futex_q *q,
 		 * flagged for rescheduling. Only call schedule if there
 		 * is no timeout, or if it has yet to expire.
 		 */
-		if (!timeout || timeout->task)
-			freezable_schedule();
+		//if (!timeout || timeout->task)
+			//freezable_schedule();
 	}
 	__set_current_state(TASK_RUNNING);
 }
@@ -504,7 +504,7 @@ static void futex_sleep_multiple(struct futex_vector *vs, unsigned int count,
 			return;
 	}
 
-	freezable_schedule();
+	//freezable_schedule();
 }
 
 /**
@@ -549,8 +549,8 @@ int futex_wait_multiple(struct futex_vector *vs, unsigned int count,
 
 		if (to && !to->task)
 			return -ETIMEDOUT;
-		else if (signal_pending(current))
-			return -ERESTARTSYS;
+		//else if (signal_pending(current))
+		//	return -ERESTARTSYS;
 		/*
 		 * The final case is a spurious wakeup, for
 		 * which just retry.
@@ -667,8 +667,8 @@ retry:
 	 * We expect signal_pending(current), but we might be the
 	 * victim of a spurious wakeup as well.
 	 */
-	if (!signal_pending(current))
-		goto retry;
+	//if (!signal_pending(current))
+	//	goto retry;
 
 	ret = -ERESTARTSYS;
 	if (!abs_time)

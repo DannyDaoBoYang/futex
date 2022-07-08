@@ -1,14 +1,14 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 #ifndef _LINUX_FUTEX_H
 #define _LINUX_FUTEX_H
-/*
-#include <linux/sched.h>
-#include <linux/ktime.h>
-*/
 
+#include <linux/sched.h>
+//#include <linux/ktime.h>
+
+//#include "types.h"
 /* Nanosecond scalar representation for kernel time values */
-typedef long  s64;
-typedef s64	ktime_t;
+//typedef long  s64;
+//typedef s64	ktime_t;
 
 #include "../uapi/futex.h"
 #include "types.h"
