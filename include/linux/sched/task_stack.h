@@ -6,7 +6,7 @@
  * task->stack (kernel stack) handling interfaces:
  */
 
-#include "../sched.h"
+//#include "../sched.h"
 //#include <linux/magic.h>
 
 #ifdef CONFIG_THREAD_INFO_IN_TASK
@@ -36,11 +36,11 @@ static inline unsigned long *end_of_stack(const struct task_struct *task)
 
 #define task_stack_page(task)	((void *)(task)->stack)
 
-static inline void setup_thread_stack(struct task_struct *p, struct task_struct *org)
+/*static inline void setup_thread_stack(struct task_struct *p, struct task_struct *org)
 {
 	*task_thread_info(p) = *task_thread_info(org);
 	task_thread_info(p)->task = p;
-}
+}*/
 
 /*
  * Return the address of the last usable long on the stack.
@@ -51,14 +51,14 @@ static inline void setup_thread_stack(struct task_struct *p, struct task_struct 
  * When the stack grows up, this is the highest address.
  * Beyond that position, we corrupt data on the next page.
  */
-static inline unsigned long *end_of_stack(struct task_struct *p)
+/*static inline unsigned long *end_of_stack(struct task_struct *p)
 {
 #ifdef CONFIG_STACK_GROWSUP
 	return (unsigned long *)((unsigned long)task_thread_info(p) + THREAD_SIZE) - 1;
 #else
 	return (unsigned long *)(task_thread_info(p) + 1);
 #endif
-}
+}*/
 
 #endif
 

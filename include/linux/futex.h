@@ -4,14 +4,14 @@
 
 #include <linux/sched.h>
 //#include <linux/ktime.h>
-
+typedef  s64 ktime_t ; 
 //#include "types.h"
 /* Nanosecond scalar representation for kernel time values */
 //typedef long  s64;
 //typedef s64	ktime_t;
 
 #include "../uapi/futex.h"
-#include "types.h"
+#include "types.h" 
 #define	EINVAL		22	/* Invalid argument */
 //the above is added
 struct inode;

@@ -2,15 +2,7 @@
 #ifndef _ASM_X86_ALTERNATIVE_H
 #define _ASM_X86_ALTERNATIVE_H
 
-//#include <linux/types.h>
-typedef unsigned char		u8;
-typedef unsigned short		u16;
-typedef unsigned int		u32;
-typedef unsigned long 	u64;
-typedef signed char		s8;
-typedef short			s16;
-typedef int			s32;
-typedef long 		s64;
+#include "../linux/types.h"
 //#include <linux/stringify.h>
 #include "../linux/stringify.h"
 //#include <asm/asm.h>

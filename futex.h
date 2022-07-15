@@ -7,20 +7,21 @@
 //uaccess currently commented out
 //
 
-#include <linux/futex.h>
-//#include "./include/linux/futex.h"
-#include <linux/sched/wake_q.h>
-//#include "./include/sched/wake_q.h"
-
+//#include <linux/futex.h>
+#include "./include/linux/types.h"
+#include "./include/linux/futex.h"
+//#include <linux/sched/wake_q.h>
+#include "./include/sched/wake_q.h"
+typedef  s64 ktime_t ; 
 
 #ifdef CONFIG_PREEMPT_RT
-#include <linux/rcuwait.h>
+//#include <linux/rcuwait.h>
 //#include <linux/rcuwait.h>
 
 #endif
 
-#include <asm/futex.h>
-//#include "./include/asm/futex.h"
+//#include <asm/futex.h>
+#include "./include/asm/futex.h"
 
 /*
  * Futex flags used to encode options to functions and preserve them across
