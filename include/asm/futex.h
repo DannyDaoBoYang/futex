@@ -2,7 +2,7 @@
 #ifndef _ASM_X86_FUTEX_H
 #define _ASM_X86_FUTEX_H
 
-
+#include "../linux/types.h"
 //#include <linux/futex.h>
 #include "../linux/futex.h"
 //#include <linux/uaccess.h>
@@ -14,30 +14,24 @@
 //#include <asm/processor.h>
 //#include <asm/smap.h>
 #include "smap.h"
-#define Efault 14
+#define volatile(x...) volatile("")
 
-#define unsafe_atomic_op1(insn, oval, uaddr, oparg, label) \
+#define unsafe_atomic_op1(insn, oval, uaddr, oparg, label)       \
 do {								\
 	int oldval = 0, ret;					\
 	asm volatile("1:\t" insn "\n"				\
 		     "2:\n"					\
-		     " .pushsection \"__ex_table\",\"a\"\n"					\
-		     " .balign 4\n"								\
-		     " .long (" #1b ") - .\n"						\
-		     " .long (" #2b ") - .\n"						\
-		     DEFINE_EXTABLE_TYPE_REG							\
-		     "extable_type_reg reg=" __stringify(%1) ", type=" __stringify(EX_TYPE_EFAULT_REG) " \n"\
-		     UNDEFINE_EXTABLE_TYPE_REG						\
-		     " .popsection\n" \
+		     _ASM_EXTABLE_TYPE_REG(1b, 2b, EX_TYPE_EFAULT_REG, %1) 				\
 		     : "=r" (oldval), "=r" (ret), "+m" (*uaddr)	\
-		     : "0" (oparg), "1" (0));	\
+		     : "0" (oparg), "1" (0));			\
 	if (ret)						\
 		goto label;					\
 	*oval = oldval;						\
-} while(0) }
+} while(0)
 
 
-#define unsafe_atomic_op2(insn, oval, uaddr, oparg, label)	do {								\
+#define unsafe_atomic_op2(insn, oval, uaddr, oparg, label)	\
+do {								\
 	int oldval = 0, ret, tem;				\
 	asm volatile("1:\tmovl	%2, %0\n"			\
 		     "2:\tmovl\t%0, %3\n"			\
@@ -45,22 +39,8 @@ do {								\
 		     "3:\t" LOCK_PREFIX "cmpxchgl %3, %2\n"	\
 		     "\tjnz\t2b\n"				\
 		     "4:\n"					\
-		     " .pushsection \"__ex_table\",\"a\"\n"					\
-		     " .balign 4\n"								\
-		     " .long (" #1b ") - .\n"						\
-		     " .long (" #4b ") - .\n"						\
-		     DEFINE_EXTABLE_TYPE_REG							\
-		     "extable_type_reg reg=" __stringify(%1) ", type=" __stringify(EX_TYPE_EFAULT_REG) " \n"\
-		     UNDEFINE_EXTABLE_TYPE_REG						\
-		     " .popsection\n" \
-		     " .pushsection \"__ex_table\",\"a\"\n"					\
-		     " .balign 4\n"								\
-		     " .long (" #3b ") - .\n"						\
-		     " .long (" #4b ") - .\n"						\
-		     DEFINE_EXTABLE_TYPE_REG							\
-		     "extable_type_reg reg=" __stringify(%1) ", type=" __stringify(EX_TYPE_EFAULT_REG) " \n"\
-		     UNDEFINE_EXTABLE_TYPE_REG						\
-		     " .popsection\n"\
+		     _ASM_EXTABLE_TYPE_REG(1b, 4b, EX_TYPE_EFAULT_REG, %1) \
+		     _ASM_EXTABLE_TYPE_REG(3b, 4b, EX_TYPE_EFAULT_REG, %1) \
 		     : "=&a" (oldval), "=&r" (ret),		\
 		       "+m" (*uaddr), "=&r" (tem)		\
 		     : "r" (oparg), "1" (0));			\
@@ -117,13 +97,7 @@ static inline int futex_atomic_cmpxchg_inatomic(u32 *uval, u32 __user *uaddr,
 		"2:\n"
 		" .pushsection \"__ex_table\",\"a\"\n"					
 		" .balign 4\n"								
-		//TODO
-		//" .long (" #1b ") - .\n"						
-		//" .long (" #2b ") - .\n"						
-		DEFINE_EXTABLE_TYPE_REG							
-		"extable_type_reg reg=" __stringify(%0) ", type=" __stringify(EX_TYPE_EFAULT_REG) " \n"
-		UNDEFINE_EXTABLE_TYPE_REG						
-		" .popsection\n"	
+		_ASM_EXTABLE_TYPE_REG(1b, 2b, EX_TYPE_EFAULT_REG, %0) \
 		: "+r" (ret), "=a" (oldval), "+m" (*uaddr)
 		: "r" (newval), "1" (oldval)
 		: "memory"

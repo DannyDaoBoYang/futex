@@ -6,7 +6,13 @@
 //Some structures/type defined twice
 //uaccess currently commented out
 //
+#include "./include/selfmade/plist.h"
+#include "./include/selfmade/rtmutex.h"
+#include "./include/selfmade/task.h"
+#include "./include/selfmade/refcount.h"
+#define SINGLE_DEPTH_NESTING			1
 
+#include "./include/linux/spinlock_types.h"
 //#include <linux/futex.h>
 #include "./include/linux/types.h"
 #include "./include/linux/futex.h"

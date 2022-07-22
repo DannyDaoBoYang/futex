@@ -243,7 +243,8 @@ struct ftrace_likely_data {
 #endif
 
 #ifndef __randomize_layout
-# define __randomize_layout __designated_init
+//# define __randomize_layout __designated_init
+#define __randomize_layout __attribute__((randomize_layout))
 #endif
 
 #ifndef __no_randomize_layout
